@@ -111,7 +111,7 @@ public class TomasuloProcessor {
         loadBuffers[loadIndex].instruction = instruction;
         instruction.issue = timer;
         LoadInstruction load = (LoadInstruction)instruction;
-        registers[load.registerNo].functionUnit = "load"+Integer.toString(loadIndex);
+        registers[load.registerNo].functionUnit = "loadBuffer"+Integer.toString(loadIndex);
         registers[load.registerNo].isWaiting = true;
         return true;
     }
@@ -142,9 +142,9 @@ public class TomasuloProcessor {
                 reservations[loadIndex].Vk = registers[cal.registerS2].value;
             instruction.issue = timer;
             if (instruction.instructionType == InstructionType.ADD || instruction.instructionType == InstructionType.SUB)
-                registers[cal.registerD].functionUnit = "add" + Integer.toString(loadIndex);
+                registers[cal.registerD].functionUnit = "addRS" + Integer.toString(loadIndex);
             else
-                registers[cal.registerD].functionUnit = "mul" + Integer.toString(loadIndex);
+                registers[cal.registerD].functionUnit = "mulRS" + Integer.toString(loadIndex);
             registers[cal.registerD].isWaiting = true;
         }
         else{//jump instruction
@@ -198,6 +198,9 @@ public class TomasuloProcessor {
                 for (int i = 0; i < adders.length; i++) {
                     if(!adders[i].isBusy){
                         startExec(adders[i], addRS[earlyIndex]);
+                        String oldFU = "addRS" + Integer.toString(earlyIndex);
+                        String newFU = "adder" + Integer.toString(i);
+                        updateFU(oldFU, newFU);
                         break;
                         //problem how to update functionUnit?
                     }
@@ -222,6 +225,9 @@ public class TomasuloProcessor {
                 for (int i = 0; i < multers.length; i++) {
                     if(!multers[i].isBusy){
                         startExec(multers[i], mulRS[earlyIndex]);
+                        String oldFU = "mulRS" + Integer.toString(earlyIndex);
+                        String newFU = "multer" + Integer.toString(i);
+                        updateFU(oldFU, newFU);
                         break;
                         //problem how to update functionUnit?
                     }
@@ -255,6 +261,10 @@ public class TomasuloProcessor {
                         //problem how to update functionUnit?
                         //restore buffer
                         loadBuffers[earlyIndex].isBusy = false;
+                        //update FU
+                        String oldFU = "loadBuffer" + Integer.toString(earlyIndex);
+                        String newFU = "loader" + Integer.toString(i);
+                        updateFU(oldFU, newFU);
                         break;
                     }
                 }
@@ -298,6 +308,27 @@ public class TomasuloProcessor {
         reservation.isBusy = false;
         reservation.Qj = null;
         reservation.Qk = null;
+    }
+
+    void updateFU(String oldFU, String newFU){
+        System.out.println("updateFU "+oldFU+" "+newFU);
+        for (int i = 0; i < registers.length; i++) {
+            if(registers[i].isWaiting && oldFU.equals(registers[i].functionUnit)){
+                registers[i].functionUnit = newFU;
+            }
+        }
+        for (int i = 0; i < addRS.length; i++) {
+            if(oldFU.equals(addRS[i].Qj))
+                addRS[i].Qj = newFU;
+            if(oldFU.equals(addRS[i].Qk))
+                addRS[i].Qk = newFU;
+        }
+        for (int i = 0; i < mulRS.length; i++) {
+            if(oldFU.equals(mulRS[i].Qj))
+                mulRS[i].Qj = newFU;
+            if(oldFU.equals(mulRS[i].Qk))
+                mulRS[i].Qk = newFU;
+        }
     }
 
     void PrintState(){
