@@ -56,17 +56,39 @@ public class TomasuloProcessor {
         while(true){
             timer++;
             System.out.println("\ncycle timer: "+timer);
-            Issue();
-            Exec();
             Write();
-            if(timer == 100)
-                break;
+            Exec();
+            Issue();
+            if(nextInstructionIndex >= instructions.length && Finished()) break;
+//            PrintState();
         }
         PrintState();
     }
 
+    boolean Finished(){
+        for (int i = 0; i < adders.length; i++) {
+            if (adders[i].isBusy) return false;
+        }
+        for (int i = 0; i < multers.length; i++) {
+            if (multers[i].isBusy) return false;
+        }
+        for (int i = 0; i < loaders.length; i++) {
+            if (loaders[i].isBusy) return false;
+        }
+        for (int i = 0; i < addRS.length; i++) {
+            if (addRS[i].isBusy) return false;
+        }
+        for (int i = 0; i < mulRS.length; i++) {
+            if (mulRS[i].isBusy) return false;
+        }
+        for (int i = 0; i < loadBuffers.length; i++) {
+            if (loadBuffers[i].isBusy) return false;
+        }
+        return true;
+    }
+
     void Issue(){
-        if(hasJump) return;
+        if(hasJump || nextInstructionIndex >= instructions.length) return;
         Instruction nextInstruction = instructions[nextInstructionIndex];
         System.out.println("Issue new instruction: pc = "+nextInstructionIndex+" type = "+nextInstruction.instructionType);
         switch (nextInstruction.instructionType){
@@ -141,10 +163,11 @@ public class TomasuloProcessor {
                 reservations[loadIndex].Qk = registers[cal.registerS2].functionUnit;
             else
                 reservations[loadIndex].Vk = registers[cal.registerS2].value;
-            System.out.println(" loadIndex = "+loadIndex+" Vj Vk Qj Qk = "+reservations[loadIndex].Vj+" "+reservations[loadIndex].Vk+" "+reservations[loadIndex].Qj+" "+reservations[loadIndex].Qk+" ready = "+reservations[loadIndex].isReady);
             if(reservations[loadIndex].Qj == null && reservations[loadIndex].Qk == null){
                 reservations[loadIndex].isReady = true;
+                reservations[loadIndex].readyTime = timer;
             }
+            System.out.println(" loadIndex = "+loadIndex+" Vj Vk Qj Qk = "+reservations[loadIndex].Vj+" "+reservations[loadIndex].Vk+" "+reservations[loadIndex].Qj+" "+reservations[loadIndex].Qk+" ready = "+reservations[loadIndex].isReady);
             if(instruction.issue == -1)
                 instruction.issue = timer;
             if (instruction.instructionType == InstructionType.ADD || instruction.instructionType == InstructionType.SUB)
@@ -162,6 +185,7 @@ public class TomasuloProcessor {
                 reservations[loadIndex].Vk = registers[jump.registerNo].value;
             if(reservations[loadIndex].Qk == null){
                 reservations[loadIndex].isReady = true;
+                reservations[loadIndex].readyTime = timer;
             }
             if(instruction.issue == -1)
                 instruction.issue = timer;
@@ -203,7 +227,8 @@ public class TomasuloProcessor {
             int earlyIndex = -1;
             int earlytime = Integer.MAX_VALUE;
             for (int i = 0; i < addRS.length; i++) {
-                if (addRS[i].isBusy && addRS[i].isReady && addRS[i].issueTime < earlytime && addRS[i].issueTime != timer){
+//                System.out.println("exec: "+addRS[i].isBusy+addRS[i].isReady+(addRS[i].issueTime < earlytime)+addRS[i].readyTime+timer);
+                if (addRS[i].isBusy && addRS[i].isReady && addRS[i].issueTime < earlytime && addRS[i].readyTime != timer){
                     ready = true;
                     earlyIndex = i;
                     earlytime = addRS[i].issueTime;
@@ -231,7 +256,7 @@ public class TomasuloProcessor {
             int earlyIndex = -1;
             int earlytime = Integer.MAX_VALUE;
             for (int i = 0; i < mulRS.length; i++) {
-                if (mulRS[i].isBusy && mulRS[i].isReady && mulRS[i].issueTime < earlytime && mulRS[i].issueTime != timer){
+                if (mulRS[i].isBusy && mulRS[i].isReady && mulRS[i].issueTime < earlytime && mulRS[i].readyTime != timer){
                     ready = true;
                     earlyIndex = i;
                     earlytime = mulRS[i].issueTime;
@@ -310,15 +335,23 @@ public class TomasuloProcessor {
                 calculator.runtimeLeft = 1;
                 if(calculator.instruction.exec == -1)
                     calculator.instruction.exec = timer;
-                calculator.result = reservation.Vj - reservation.Vk;
+                calculator.result = reservation.Vj == reservation.Vk ? ((JumpInstruction)reservation.instruction).jumpAddr : 1;
                 break;
             case MUL:
-                calculator.runtimeLeft = 12;
+                calculator.runtimeLeft = 4;
                 calculator.result = reservation.Vj * reservation.Vk;
                 break;
             case DIV:
-                calculator.runtimeLeft = 40;
-                calculator.result = reservation.Vj / reservation.Vk;
+                if(reservation.Vk == 0){
+                    calculator.result = reservation.Vj;
+                    calculator.runtimeLeft = 1;
+                    if(calculator.instruction.exec == -1)
+                        calculator.instruction.exec = timer;
+                }
+                else {
+                    calculator.runtimeLeft = 4;
+                    calculator.result = reservation.Vj / reservation.Vk;
+                }
                 break;
             default:
                 System.out.println("gg");
@@ -326,6 +359,7 @@ public class TomasuloProcessor {
         }
         //restore
         reservation.isReady = false;
+        reservation.readyTime = 0;
         reservation.isBusy = false;
         reservation.Qj = null;
         reservation.Qk = null;
@@ -354,7 +388,7 @@ public class TomasuloProcessor {
 
     void Write(){
         for (int i = 0; i < adders.length; i++) {
-            if(adders[i].isBusy && adders[i].runtimeLeft == 0){
+            if(adders[i].isBusy && adders[i].runtimeLeft == 1){
                 System.out.println("write adders: type = "+adders[i].instruction.instructionType+" result = "+adders[i].result);
                 startWrite(adders[i]);
                 if(adders[i].instruction.instructionType != InstructionType.JUMP) {
@@ -362,14 +396,13 @@ public class TomasuloProcessor {
                     updateValue(old, adders[i].result);
                 }
                 else{//no fu should be waiting for jump instruction.
-                    //try do nothing
-//                    nextInstructionIndex += adders[i].result-1;
-//                    hasJump = false;
+                    nextInstructionIndex += adders[i].result-1;
+                    hasJump = false;
                 }
             }
         }
         for (int i = 0; i < multers.length; i++) {
-            if(multers[i].isBusy && multers[i].runtimeLeft == 0){
+            if(multers[i].isBusy && multers[i].runtimeLeft == 1){
                 System.out.println("write multers type = "+multers[i].instruction.instructionType+" result = "+multers[i].result);
                 startWrite(multers[i]);
                 String old = "multer"+Integer.toString(i);
@@ -377,7 +410,7 @@ public class TomasuloProcessor {
             }
         }
         for (int i = 0; i < loaders.length; i++) {
-            if(loaders[i].isBusy && loaders[i].runtimeLeft == 0){
+            if(loaders[i].isBusy && loaders[i].runtimeLeft == 1){
                 System.out.println("write loaders type = "+loaders[i].instruction.instructionType+" result = "+loaders[i].result);
                 loaders[i].isBusy = false;
                 loaders[i].runtimeLeft = 0;
@@ -399,7 +432,7 @@ public class TomasuloProcessor {
             }
         }
         for (int i = 0; i < addRS.length; i++) {
-            if(addRS[i].isBusy) {
+            if(addRS[i].isBusy && (addRS[i].Qj != null || addRS[i].Qk != null)) {
                 if (oldFU.equals(addRS[i].Qj)) {
                     addRS[i].Qj = null;
                     addRS[i].Vj = value;
@@ -408,12 +441,14 @@ public class TomasuloProcessor {
                     addRS[i].Qk = null;
                     addRS[i].Vk = value;
                 }
-                if (addRS[i].Qj == null && addRS[i].Qk == null)
+                if (addRS[i].Qj == null && addRS[i].Qk == null) {
                     addRS[i].isReady = true;
+                    addRS[i].readyTime = timer;
+                }
             }
         }
         for (int i = 0; i < mulRS.length; i++) {
-            if(mulRS[i].isBusy) {
+            if(mulRS[i].isBusy && (mulRS[i].Qj != null || mulRS[i].Qk != null)) {//is waiting
                 if (oldFU.equals(mulRS[i].Qj)) {
                     mulRS[i].Qj = null;
                     mulRS[i].Vj = value;
@@ -422,8 +457,10 @@ public class TomasuloProcessor {
                     mulRS[i].Qk = null;
                     mulRS[i].Vk = value;
                 }
-                if (mulRS[i].Qj == null && mulRS[i].Qk == null)
+                if (mulRS[i].Qj == null && mulRS[i].Qk == null) {
                     mulRS[i].isReady = true;
+                    mulRS[i].readyTime = timer;
+                }
             }
         }
     }
@@ -479,6 +516,7 @@ class Reservation{
     int issueTime;
     boolean isBusy;
     boolean isReady;
+    int readyTime;
     InstructionType operation;
     String Qj, Qk;
     int Vj, Vk;
@@ -487,6 +525,7 @@ class Reservation{
         isBusy = false;
         isReady = false;
         Qj = Qk = null;
+        readyTime = 0;
     }
 }
 

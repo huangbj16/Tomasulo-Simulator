@@ -24,7 +24,10 @@ public class Tomasulo {
     //blog.csdn.net/nickwong_/article/details/51502969
 
     public static void main(String []args){
-        String pathname = "../test1.nel";
+//        int a = 3/2, b = (-3)/2;
+//        System.out.println(a);
+//        System.out.println(b);
+        String pathname = "../test2.nel";
         List<String> instructionString = readFile(pathname);
         System.out.println(instructionString.size());
         loader = new InstructionLoader();
