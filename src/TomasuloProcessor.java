@@ -15,8 +15,10 @@ public class TomasuloProcessor {
     int nextInstructionIndex;
     int timer;
     final int ADDNUM = 3, MULNUM = 2, LOADNUM = 2, ADDRSNUM = 6, MULRSNUM = 3, LOADBUFNUM = 3;
+    Tomasulo father;
 
-    TomasuloProcessor(){
+    TomasuloProcessor(Tomasulo tomasulo){
+        father = tomasulo;
         adders = new Calculator[3];
         for (int i = 0; i < adders.length; i++) {
             adders[i] = new Calculator();
@@ -59,6 +61,8 @@ public class TomasuloProcessor {
             Write();
             Exec();
             Issue();
+            father.updateDisplay();
+            if(nextInstructionIndex == 10) break;
             if(nextInstructionIndex >= instructions.length && Finished()) break;
 //            PrintState();
         }
@@ -122,7 +126,7 @@ public class TomasuloProcessor {
         System.out.println("issue loadbuffer: type = "+instruction.instructionType+" timer = "+timer);
         int loadIndex = -1;
         for (int i = 0; i < loadBuffers.length; i++) {
-            if(!loadBuffers[i].isBusy){
+            if(!loadBuffers[i].isBusy && loadBuffers[i].writeTime != timer){
                 loadIndex = i;
                 break;
             }
@@ -130,6 +134,7 @@ public class TomasuloProcessor {
         if(loadIndex == -1) return false;
         loadBuffers[loadIndex].isBusy = true;
         loadBuffers[loadIndex].issueTime = timer;
+        loadBuffers[loadIndex].writeTime = -1;
         loadBuffers[loadIndex].instruction = instruction;
         if(instruction.issue == -1)
             instruction.issue = timer;
@@ -143,7 +148,7 @@ public class TomasuloProcessor {
         System.out.print("issue reservation: type = "+instruction.instructionType+" timer = "+timer);
         int loadIndex = -1;
         for (int i = 0; i < reservations.length; i++) {
-            if(!reservations[i].isBusy){
+            if(!reservations[i].isBusy && reservations[i].writeTime != timer){
                 loadIndex = i;
                 break;
             }
@@ -153,6 +158,7 @@ public class TomasuloProcessor {
         reservations[loadIndex].issueTime = timer;
         reservations[loadIndex].operation = instruction.instructionType;
         reservations[loadIndex].instruction = instruction;
+        reservations[loadIndex].writeTime = -1;
         if(instruction.instructionType != InstructionType.JUMP) {
             CalInstruction cal = (CalInstruction) instruction;
             if (registers[cal.registerS1].isWaiting)
@@ -228,7 +234,7 @@ public class TomasuloProcessor {
             int earlytime = Integer.MAX_VALUE;
             for (int i = 0; i < addRS.length; i++) {
 //                System.out.println("exec: "+addRS[i].isBusy+addRS[i].isReady+(addRS[i].issueTime < earlytime)+addRS[i].readyTime+timer);
-                if (addRS[i].isBusy && addRS[i].isReady && addRS[i].issueTime < earlytime && addRS[i].readyTime != timer){
+                if (addRS[i].isBusy && addRS[i].isReady && !addRS[i].isExec && addRS[i].issueTime < earlytime && addRS[i].readyTime != timer){
                     ready = true;
                     earlyIndex = i;
                     earlytime = addRS[i].issueTime;
@@ -256,7 +262,7 @@ public class TomasuloProcessor {
             int earlyIndex = -1;
             int earlytime = Integer.MAX_VALUE;
             for (int i = 0; i < mulRS.length; i++) {
-                if (mulRS[i].isBusy && mulRS[i].isReady && mulRS[i].issueTime < earlytime && mulRS[i].readyTime != timer){
+                if (mulRS[i].isBusy && mulRS[i].isReady && !mulRS[i].isExec && mulRS[i].issueTime < earlytime && mulRS[i].readyTime != timer){
                     ready = true;
                     earlyIndex = i;
                     earlytime = mulRS[i].issueTime;
@@ -284,7 +290,7 @@ public class TomasuloProcessor {
             int earlyIndex = -1;
             int earlytime = Integer.MAX_VALUE;
             for (int i = 0; i < loadBuffers.length; i++) {
-                if (loadBuffers[i].isBusy && loadBuffers[i].issueTime < earlytime && loadBuffers[i].issueTime != timer){
+                if (loadBuffers[i].isBusy && !loadBuffers[i].isExec && loadBuffers[i].issueTime < earlytime && loadBuffers[i].issueTime != timer){
                     ready = true;
                     earlyIndex = i;
                     earlytime = loadBuffers[i].issueTime;
@@ -303,8 +309,10 @@ public class TomasuloProcessor {
                         loaders[i].result = load.loadAddr;
                         System.out.println(load.loadAddr);
                         //problem how to update functionUnit?
-                        //restore buffer
-                        loadBuffers[earlyIndex].isBusy = false;
+                        //restore buffer no longer needed
+//                        loadBuffers[earlyIndex].isBusy = false;
+                        loadBuffers[earlyIndex].isExec = true;
+                        loaders[i].loadBuffer = loadBuffers[earlyIndex];
                         //update FU
                         String oldFU = "loadBuffer" + Integer.toString(earlyIndex);
                         String newFU = "loader" + Integer.toString(i);
@@ -321,6 +329,8 @@ public class TomasuloProcessor {
     void startExec(Calculator calculator, Reservation reservation){
         calculator.isBusy = true;
         calculator.instruction = reservation.instruction;
+        calculator.reservation = reservation;
+        reservation.isExec = true;
 //        calculator.instruction.exec = timer;
         switch (reservation.operation){
             case ADD:
@@ -357,12 +367,12 @@ public class TomasuloProcessor {
                 System.out.println("gg");
                 exit(0);
         }
-        //restore
-        reservation.isReady = false;
-        reservation.readyTime = 0;
-        reservation.isBusy = false;
-        reservation.Qj = null;
-        reservation.Qk = null;
+//        //restore is no longer needed
+//        reservation.isReady = false;
+//        reservation.readyTime = 0;
+//        reservation.isBusy = false;
+//        reservation.Qj = null;
+//        reservation.Qk = null;
     }
 
     void updateFU(String oldFU, String newFU){
@@ -413,6 +423,10 @@ public class TomasuloProcessor {
             if(loaders[i].isBusy && loaders[i].runtimeLeft == 1){
                 System.out.println("write loaders type = "+loaders[i].instruction.instructionType+" result = "+loaders[i].result);
                 loaders[i].isBusy = false;
+                loaders[i].loadBuffer.isBusy = false;
+                loaders[i].loadBuffer.writeTime = timer;
+                loaders[i].loadBuffer.isExec = false;
+                loaders[i].loadBuffer = null;
                 loaders[i].runtimeLeft = 0;
                 if(loaders[i].instruction.write == -1)
                     loaders[i].instruction.write = timer;
@@ -468,6 +482,15 @@ public class TomasuloProcessor {
     void startWrite(Calculator calculator){
         calculator.isBusy = false;
         calculator.runtimeLeft = 0;
+        //restore
+        calculator.reservation.isReady = false;
+        calculator.reservation.readyTime = 0;
+        calculator.reservation.isBusy = false;
+        calculator.reservation.Qj = null;
+        calculator.reservation.Qk = null;
+        calculator.reservation.writeTime = timer;
+        calculator.reservation.isExec = false;
+        calculator.reservation = null;
         if(calculator.instruction.write == -1)
             calculator.instruction.write = timer;
     }
@@ -507,8 +530,10 @@ class Calculator{
     boolean isBusy;
     int result;
     Instruction instruction;
+    Reservation reservation;
     Calculator(){
         isBusy = false;
+        reservation = null;
     }
 }
 
@@ -516,16 +541,20 @@ class Reservation{
     int issueTime;
     boolean isBusy;
     boolean isReady;
+    boolean isExec;
     int readyTime;
+    int writeTime;
     InstructionType operation;
     String Qj, Qk;
     int Vj, Vk;
     Instruction instruction;
     Reservation(){
+        isExec = false;
         isBusy = false;
         isReady = false;
         Qj = Qk = null;
         readyTime = 0;
+        writeTime = -1;
     }
 }
 
@@ -534,8 +563,10 @@ class Loader{
     boolean isBusy;
     int result;
     Instruction instruction;
+    LoadBuffer loadBuffer;
     Loader(){
         isBusy = false;
+        loadBuffer = null;
     }
 }
 
@@ -543,8 +574,12 @@ class LoadBuffer{
     int issueTime;
     boolean isBusy;
     Instruction instruction;
+    int writeTime;
+    boolean isExec;
     LoadBuffer(){
         isBusy = false;
+        isExec = false;
+        writeTime = -1;
     }
 }
 
