@@ -1,5 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,7 @@ public class Tomasulo {
     BufferPanel bufferPanel;
     RegisterPanel registerPanel;
     CalPanel calPanel;
+    ControlPanel controlPanel;
 
     public static List<String> readFile(String pathname) {
         List<String> instructions = new ArrayList<>();
@@ -38,10 +41,12 @@ public class Tomasulo {
         tomasulo.bufferPanel = new BufferPanel();
         tomasulo.registerPanel = new RegisterPanel();
         tomasulo.calPanel = new CalPanel();
+        tomasulo.controlPanel = new ControlPanel();
 
         tomasulo.frame = new JFrame();
 
         tomasulo.frame.setLayout(new GridLayout(5, 1));
+        tomasulo.frame.add(tomasulo.controlPanel);
         tomasulo.frame.add(tomasulo.resPanel);
         tomasulo.frame.add(tomasulo.bufferPanel);
         tomasulo.frame.add(tomasulo.registerPanel);
@@ -58,8 +63,15 @@ public class Tomasulo {
 
         tomasulo.loader = new InstructionLoader();
         Instruction[] instructions = tomasulo.loader.LoadInstructionsFromFile(instructionString, instructionString.size());
-        tomasulo.processor = new TomasuloProcessor(tomasulo);
-        tomasulo.processor.Process(instructions);
+        tomasulo.processor = new TomasuloProcessor(tomasulo, instructions);
+        tomasulo.updateDisplay();
+        tomasulo.controlPanel.button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                tomasulo.processor.Process();
+                tomasulo.controlPanel.timer.setText(Integer.toString(tomasulo.processor.timer));
+            }
+        });
 //        System.out.println("finished");
     }
 

@@ -1,5 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 class ResPanel extends JPanel {
     GridLayout gridLayout;
@@ -113,5 +115,16 @@ class CalPanel extends JPanel {
 }
 
 class ControlPanel extends JPanel{
-
+    FlowLayout flowLayout;
+    JButton button;
+    JLabel timer;
+    public ControlPanel() {
+        super();
+        flowLayout = new FlowLayout();
+        this.setLayout(flowLayout);
+        button = new JButton("next");
+        this.add(button);
+        timer = new JLabel("0");
+        this.add(timer);
+    }
 }

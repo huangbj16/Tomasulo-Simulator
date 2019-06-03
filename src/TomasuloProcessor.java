@@ -17,7 +17,7 @@ public class TomasuloProcessor {
     final int ADDNUM = 3, MULNUM = 2, LOADNUM = 2, ADDRSNUM = 6, MULRSNUM = 3, LOADBUFNUM = 3;
     Tomasulo father;
 
-    TomasuloProcessor(Tomasulo tomasulo){
+    TomasuloProcessor(Tomasulo tomasulo, Instruction[] instructions){
         father = tomasulo;
         adders = new Calculator[3];
         for (int i = 0; i < adders.length; i++) {
@@ -48,25 +48,23 @@ public class TomasuloProcessor {
             registers[i] = new RegisterResultStatus();
         }
         hasJump = false;
-        instructions = null;
+        this.instructions = instructions;
         nextInstructionIndex = 0;
         timer = 0;
     }
 
-    void Process(Instruction[] instructions){
-        this.instructions = instructions;
-        while(true){
-            timer++;
-            System.out.println("\ncycle timer: "+timer);
-            Write();
-            Exec();
-            Issue();
-            father.updateDisplay();
-            if(nextInstructionIndex == 10) break;
-            if(nextInstructionIndex >= instructions.length && Finished()) break;
-//            PrintState();
+    void Process(){
+        if(nextInstructionIndex >= instructions.length && Finished()) {
+            System.out.println("finished");
+            return;
         }
-        PrintState();
+        timer++;
+        System.out.println("\ncycle timer: "+timer);
+        Write();
+        Exec();
+        Issue();
+        father.updateDisplay();
+//        PrintState();
     }
 
     boolean Finished(){
