@@ -53,10 +53,10 @@ public class TomasuloProcessor {
         timer = 0;
     }
 
-    void Process(){
+    boolean Process(){
         if(nextInstructionIndex >= instructions.length && Finished()) {
             System.out.println("finished");
-            return;
+            return false;
         }
         timer++;
         System.out.println("\ncycle timer: "+timer);
@@ -64,6 +64,7 @@ public class TomasuloProcessor {
         Exec();
         Issue();
         father.updateDisplay();
+        return true;
 //        PrintState();
     }
 

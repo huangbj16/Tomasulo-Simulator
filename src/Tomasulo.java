@@ -36,7 +36,7 @@ public class Tomasulo {
     //blog.csdn.net/nickwong_/article/details/51502969
 
     public static void main(String []args){
-        String pathname = "../test0.nel";
+        String pathname = "../test2.nel";
         List<String> instructionString = readFile(pathname);
         System.out.println(instructionString.size());
 
@@ -60,7 +60,7 @@ public class Tomasulo {
 
         tomasulo.frame.setLayout(null);
         tomasulo.frame.setSize(1000, 1000);
-        tomasulo.controlPanel.setBounds(100, 50, 200, 50);
+        tomasulo.controlPanel.setBounds(100, 50, 400, 50);
         tomasulo.resPanel.setBounds(100, 100, 800, 200);
         tomasulo.bufferPanel.setBounds(100, 350, 200, 300);
         tomasulo.registerPanel.setBounds(100, 700, 800, 200);
@@ -87,6 +87,14 @@ public class Tomasulo {
             public void actionPerformed(ActionEvent e) {
                 tomasulo.processor.Process();
                 tomasulo.controlPanel.timer.setText(Integer.toString(tomasulo.processor.timer));
+            }
+        });
+        tomasulo.controlPanel.endButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                while(tomasulo.processor.Process() == true) {
+                    tomasulo.controlPanel.timer.setText(Integer.toString(tomasulo.processor.timer));
+                }
             }
         });
 //        System.out.println("finished");

@@ -123,7 +123,7 @@ class CalPanel extends JPanel {
 
 class ControlPanel extends JPanel{
     FlowLayout flowLayout;
-    JButton button;
+    JButton button, endButton;
     JLabel timerText, timer;
     public ControlPanel() {
         super();
@@ -131,6 +131,8 @@ class ControlPanel extends JPanel{
         this.setLayout(flowLayout);
         button = new JButton("next");
         this.add(button);
+        endButton = new JButton("end");
+        this.add(endButton);
         timerText = new JLabel("cycle: ");
         this.add(timerText);
         timer = new JLabel("0");
