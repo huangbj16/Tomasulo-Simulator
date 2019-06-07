@@ -137,3 +137,34 @@ class ControlPanel extends JPanel{
         this.add(timer);
     }
 }
+
+class InstructionPanel extends JPanel{
+    JPanel leftPanel, rightPanel;
+    JLabel[] instructionLabels;
+    InstructionPanel(Object[] instructions){
+        super();
+        leftPanel = new JPanel();
+        rightPanel = new JPanel();
+        int lineNum = instructions.length;
+        leftPanel.setLayout(new GridLayout(lineNum+1, 1));
+        rightPanel.setLayout(new GridLayout(lineNum+1, 3));
+        instructionLabels = new JLabel[(lineNum+1)*4];
+        for (int i = 0; i < instructionLabels.length; i++) {
+            instructionLabels[i] = new JLabel("", JLabel.CENTER);
+            instructionLabels[i].setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            if(i % 4 == 0)
+                leftPanel.add(instructionLabels[i]);
+            else
+                rightPanel.add(instructionLabels[i]);
+        }
+        instructionLabels[1].setText("IssueTime");
+        instructionLabels[2].setText("ExecFinishedTime");
+        instructionLabels[3].setText("WriteTime");
+        for (int i = 0; i < instructions.length; i++) {
+            instructionLabels[4+4*i].setText((String) instructions[i]);
+        }
+        this.setLayout(new GridLayout(1, 2));
+        this.add(leftPanel);
+        this.add(rightPanel);
+    }
+}

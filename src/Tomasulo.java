@@ -15,6 +15,8 @@ public class Tomasulo {
     RegisterPanel registerPanel;
     CalPanel calPanel;
     ControlPanel controlPanel;
+    InstructionPanel instructionPanel;
+    JScrollPane scrollPane;
 
     public static List<String> readFile(String pathname) {
         List<String> instructions = new ArrayList<>();
@@ -34,6 +36,10 @@ public class Tomasulo {
     //blog.csdn.net/nickwong_/article/details/51502969
 
     public static void main(String []args){
+        String pathname = "../test0.nel";
+        List<String> instructionString = readFile(pathname);
+        System.out.println(instructionString.size());
+
         JFrame.setDefaultLookAndFeelDecorated(true);
         try{
             UIManager.setLookAndFeel("ch.randelshofer.quaqua.QuaquaLookAndFeel");
@@ -47,29 +53,30 @@ public class Tomasulo {
         tomasulo.registerPanel = new RegisterPanel();
         tomasulo.calPanel = new CalPanel();
         tomasulo.controlPanel = new ControlPanel();
-
+        tomasulo.instructionPanel = new InstructionPanel(instructionString.toArray());
+        tomasulo.instructionPanel.setPreferredSize(new Dimension(200, 25*(instructionString.size()+1)));
+        tomasulo.scrollPane = new JScrollPane(tomasulo.instructionPanel);
         tomasulo.frame = new JFrame();
 
         tomasulo.frame.setLayout(null);
         tomasulo.frame.setSize(1000, 1000);
         tomasulo.controlPanel.setBounds(100, 50, 200, 50);
         tomasulo.resPanel.setBounds(100, 100, 800, 200);
-        tomasulo.bufferPanel.setBounds(100, 350, 370, 300);
+        tomasulo.bufferPanel.setBounds(100, 350, 200, 300);
         tomasulo.registerPanel.setBounds(100, 700, 800, 200);
-        tomasulo.calPanel.setBounds(500, 350, 400, 300);
+        tomasulo.calPanel.setBounds(350, 350, 200, 300);
+        tomasulo.scrollPane.setBounds(600, 350, 300, 300);
         tomasulo.frame.add(tomasulo.controlPanel);
         tomasulo.frame.add(tomasulo.resPanel);
         tomasulo.frame.add(tomasulo.bufferPanel);
         tomasulo.frame.add(tomasulo.registerPanel);
         tomasulo.frame.add(tomasulo.calPanel);
+        tomasulo.frame.add(tomasulo.scrollPane);
         tomasulo.frame.setVisible(true);
         tomasulo.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //        int a = 3/2, b = (-3)/2;
 //        System.out.println(a);
 //        System.out.println(b);
-        String pathname = "../test2.nel";
-        List<String> instructionString = readFile(pathname);
-        System.out.println(instructionString.size());
 
         tomasulo.loader = new InstructionLoader();
         Instruction[] instructions = tomasulo.loader.LoadInstructionsFromFile(instructionString, instructionString.size());
@@ -174,6 +181,14 @@ public class Tomasulo {
                 calPanel.labels[3 * (i + 6) + 1].setText(null);
                 calPanel.labels[3 * (i + 6) + 2].setText(null);
             }
+        }
+        for (int i = 0; i < processor.instructions.length; i++) {
+            if(processor.instructions[i].issue != -1)
+                instructionPanel.instructionLabels[4+4*i+1].setText(Integer.toString(processor.instructions[i].issue));
+            if(processor.instructions[i].exec != -1)
+                instructionPanel.instructionLabels[4+4*i+2].setText(Integer.toString(processor.instructions[i].exec));
+            if(processor.instructions[i].write != -1)
+                instructionPanel.instructionLabels[4+4*i+3].setText(Integer.toString(processor.instructions[i].write));
         }
     }
 
