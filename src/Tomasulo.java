@@ -35,6 +35,11 @@ public class Tomasulo {
 
     public static void main(String []args){
         JFrame.setDefaultLookAndFeelDecorated(true);
+        try{
+            UIManager.setLookAndFeel("ch.randelshofer.quaqua.QuaquaLookAndFeel");
+        } catch(Exception e){
+            e.printStackTrace();
+        }
         Tomasulo tomasulo = new Tomasulo();
 
         tomasulo.resPanel = new ResPanel();
@@ -45,13 +50,18 @@ public class Tomasulo {
 
         tomasulo.frame = new JFrame();
 
-        tomasulo.frame.setLayout(new GridLayout(5, 1));
+        tomasulo.frame.setLayout(null);
+        tomasulo.frame.setSize(1000, 1000);
+        tomasulo.controlPanel.setBounds(100, 50, 200, 50);
+        tomasulo.resPanel.setBounds(100, 100, 800, 200);
+        tomasulo.bufferPanel.setBounds(100, 350, 370, 300);
+        tomasulo.registerPanel.setBounds(100, 700, 800, 200);
+        tomasulo.calPanel.setBounds(500, 350, 400, 300);
         tomasulo.frame.add(tomasulo.controlPanel);
         tomasulo.frame.add(tomasulo.resPanel);
         tomasulo.frame.add(tomasulo.bufferPanel);
         tomasulo.frame.add(tomasulo.registerPanel);
         tomasulo.frame.add(tomasulo.calPanel);
-        tomasulo.frame.setSize(810, 840);
         tomasulo.frame.setVisible(true);
         tomasulo.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //        int a = 3/2, b = (-3)/2;
@@ -126,9 +136,13 @@ public class Tomasulo {
             }
         }
 
-        for (int i = 0; i < processor.registers.length; i++) {
-            registerPanel.labels[33+i+1].setText(processor.registers[i].functionUnit);
-            registerPanel.labels[66+i+1].setText(Integer.toString(processor.registers[i].value));
+        for (int i = 0; i < processor.registers.length/2; i++) {
+            registerPanel.labels[17+i+1].setText(processor.registers[i].functionUnit);
+            registerPanel.labels[34+i+1].setText(Integer.toString(processor.registers[i].value));
+        }
+        for (int i = processor.registers.length/2; i < processor.registers.length; i++) {
+            registerPanel.labels[68+i+1-16].setText(processor.registers[i].functionUnit);
+            registerPanel.labels[85+i+1-16].setText(Integer.toString(processor.registers[i].value));
         }
 
         for (int i = 0; i < processor.adders.length; i++) {

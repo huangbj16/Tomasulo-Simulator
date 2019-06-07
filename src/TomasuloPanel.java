@@ -14,7 +14,8 @@ class ResPanel extends JPanel {
         this.setLayout(gridLayout);
         labels = new JLabel[row*col];
         for (int i = 0; i < labels.length; i++) {
-            labels[i] = new JLabel();
+            labels[i] = new JLabel("", JLabel.CENTER);
+//            labels[i].setPreferredSize(new Dimension(10, 10));
             labels[i].setBorder(BorderFactory.createLineBorder(Color.BLACK));
             this.add(labels[i]);
         }
@@ -47,7 +48,7 @@ class BufferPanel extends JPanel {
         this.setLayout(gridLayout);
         labels = new JLabel[row*col];
         for (int i = 0; i < labels.length; i++) {
-            labels[i] = new JLabel();
+            labels[i] = new JLabel("", JLabel.CENTER);
             labels[i].setBorder(BorderFactory.createLineBorder(Color.BLACK));
             this.add(labels[i]);
         }
@@ -64,7 +65,7 @@ class BufferPanel extends JPanel {
 class RegisterPanel extends JPanel {
     GridLayout gridLayout;
     JLabel[] labels;
-    int row = 3, col = 33;
+    int row = 6, col = 17;
 
     public RegisterPanel() {
         super();
@@ -72,17 +73,23 @@ class RegisterPanel extends JPanel {
         this.setLayout(gridLayout);
         labels = new JLabel[row*col];
         for (int i = 0; i < labels.length; i++) {
-            labels[i] = new JLabel();
+            labels[i] = new JLabel("", JLabel.CENTER);
             labels[i].setBorder(BorderFactory.createLineBorder(Color.BLACK));
             this.add(labels[i]);
         }
         labels[0].setText("寄存器状态");
+        labels[17].setText("State");
+        labels[34].setText("Value");
+        labels[51].setText("寄存器状态");
+        labels[68].setText("State");
+        labels[85].setText("Value");
         String prefix = "F";
-        for (int i = 0; i < 32; i++) {
+        for (int i = 0; i < 16; i++) {
             labels[1+i].setText(prefix+i);
         }
-        labels[33].setText("State");
-        labels[66].setText("Value");
+        for (int i = 16; i < 32; i++) {
+            labels[52+i-16].setText(prefix+i);
+        }
     }
 }
 
@@ -97,7 +104,7 @@ class CalPanel extends JPanel {
         this.setLayout(gridLayout);
         labels = new JLabel[row*col];
         for (int i = 0; i < labels.length; i++) {
-            labels[i] = new JLabel();
+            labels[i] = new JLabel("", JLabel.CENTER);
             labels[i].setBorder(BorderFactory.createLineBorder(Color.BLACK));
             this.add(labels[i]);
         }
@@ -117,13 +124,15 @@ class CalPanel extends JPanel {
 class ControlPanel extends JPanel{
     FlowLayout flowLayout;
     JButton button;
-    JLabel timer;
+    JLabel timerText, timer;
     public ControlPanel() {
         super();
         flowLayout = new FlowLayout();
         this.setLayout(flowLayout);
         button = new JButton("next");
         this.add(button);
+        timerText = new JLabel("cycle: ");
+        this.add(timerText);
         timer = new JLabel("0");
         this.add(timer);
     }
