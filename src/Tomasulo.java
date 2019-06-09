@@ -92,9 +92,12 @@ public class Tomasulo {
         tomasulo.controlPanel.endButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                while(tomasulo.processor.Process() == true) {
-                    tomasulo.controlPanel.timer.setText(Integer.toString(tomasulo.processor.timer));
-                }
+                long startTime =  System.currentTimeMillis();
+                while(tomasulo.processor.Process() == true);
+                long endTime =  System.currentTimeMillis();
+                long elaspTime = (endTime-startTime);
+                System.out.println("time: "+elaspTime+"ms");
+                tomasulo.controlPanel.timer.setText(Integer.toString(tomasulo.processor.timer));
             }
         });
 //        System.out.println("finished");
