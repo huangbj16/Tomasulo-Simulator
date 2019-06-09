@@ -347,7 +347,7 @@ public class TomasuloProcessor {
                 calculator.result = reservation.Vj == reservation.Vk ? ((JumpInstruction)reservation.instruction).jumpAddr : 1;
                 break;
             case MUL:
-                calculator.runtimeLeft = 4;
+                calculator.runtimeLeft = 12;
                 calculator.result = reservation.Vj * reservation.Vk;
                 break;
             case DIV:
@@ -358,7 +358,7 @@ public class TomasuloProcessor {
                         calculator.instruction.exec = timer;
                 }
                 else {
-                    calculator.runtimeLeft = 4;
+                    calculator.runtimeLeft = 40;
                     calculator.result = reservation.Vj / reservation.Vk;
                 }
                 break;
