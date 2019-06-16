@@ -143,11 +143,13 @@ class ControlPanel extends JPanel{
 class InstructionPanel extends JPanel{
     JPanel leftPanel, rightPanel;
     JLabel[] instructionLabels;
+    int lineNum;
     InstructionPanel(Object[] instructions){
         super();
         leftPanel = new JPanel();
         rightPanel = new JPanel();
-        int lineNum = instructions.length;
+        int lineNum = instructions.length <= 1000 ? instructions.length : 1000;
+        this.lineNum = lineNum;
         leftPanel.setLayout(new GridLayout(lineNum+1, 1));
         rightPanel.setLayout(new GridLayout(lineNum+1, 3));
         instructionLabels = new JLabel[(lineNum+1)*4];
@@ -162,11 +164,17 @@ class InstructionPanel extends JPanel{
         instructionLabels[1].setText("IssueTime");
         instructionLabels[2].setText("ExecFinishedTime");
         instructionLabels[3].setText("WriteTime");
-        for (int i = 0; i < instructions.length; i++) {
+        for (int i = 0; i < instructions.length && i < 1000; i++) {
             instructionLabels[4+4*i].setText((String) instructions[i]);
         }
         this.setLayout(new GridLayout(1, 2));
         this.add(leftPanel);
         this.add(rightPanel);
+    }
+
+    public void clear() {
+        for (int i = 4; i < instructionLabels.length; i++) {
+            instructionLabels[i].setText("");
+        }
     }
 }

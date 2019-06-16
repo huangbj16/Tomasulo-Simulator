@@ -63,7 +63,6 @@ public class TomasuloProcessor {
         Write();
         Exec();
         Issue();
-        father.updateDisplay();//update GUI display
         return true;
 //        PrintState();
     }

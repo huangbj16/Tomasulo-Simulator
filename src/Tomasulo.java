@@ -17,6 +17,7 @@ public class Tomasulo {
     ControlPanel controlPanel;
     InstructionPanel instructionPanel;
     JScrollPane scrollPane;
+    List<String> instructionString;
 
     public static List<String> readFile(String pathname) {
         List<String> instructions = new ArrayList<>();
@@ -36,7 +37,7 @@ public class Tomasulo {
     //blog.csdn.net/nickwong_/article/details/51502969
 
     public static void main(String []args){
-        String pathname = "../test2.nel";
+        String pathname = "../Archive/test0.nel";
         List<String> instructionString = readFile(pathname);
         System.out.println(instructionString.size());
 
@@ -47,14 +48,14 @@ public class Tomasulo {
             e.printStackTrace();
         }
         Tomasulo tomasulo = new Tomasulo();
-
+        tomasulo.instructionString = instructionString;
         tomasulo.resPanel = new ResPanel();
         tomasulo.bufferPanel = new BufferPanel();
         tomasulo.registerPanel = new RegisterPanel();
         tomasulo.calPanel = new CalPanel();
         tomasulo.controlPanel = new ControlPanel();
         tomasulo.instructionPanel = new InstructionPanel(instructionString.toArray());
-        tomasulo.instructionPanel.setPreferredSize(new Dimension(200, 25*(instructionString.size()+1)));
+        tomasulo.instructionPanel.setPreferredSize(new Dimension(200, 25*(tomasulo.instructionPanel.lineNum+1)));
         tomasulo.scrollPane = new JScrollPane(tomasulo.instructionPanel);
         tomasulo.frame = new JFrame();
 
@@ -86,6 +87,7 @@ public class Tomasulo {
             @Override
             public void actionPerformed(ActionEvent e) {
                 tomasulo.processor.Process();
+                tomasulo.updateDisplay();
                 tomasulo.controlPanel.timer.setText(Integer.toString(tomasulo.processor.timer));
             }
         });
@@ -94,6 +96,8 @@ public class Tomasulo {
             public void actionPerformed(ActionEvent e) {
                 long startTime =  System.currentTimeMillis();
                 while(tomasulo.processor.Process() == true);
+                tomasulo.instructionPanel.clear();
+                tomasulo.updateDisplay();
                 long endTime =  System.currentTimeMillis();
                 long elaspTime = (endTime-startTime);
                 System.out.println("time: "+elaspTime+"ms");
@@ -193,13 +197,15 @@ public class Tomasulo {
                 calPanel.labels[3 * (i + 6) + 2].setText(null);
             }
         }
-        for (int i = 0; i < processor.instructions.length; i++) {
+        int start = processor.nextInstructionIndex > 500 ? processor.nextInstructionIndex-500 : 0;
+        for (int i = 0; i+start < processor.instructions.length && i < 1000; i++) {
+            instructionPanel.instructionLabels[4+4*i].setText((String) instructionString.get(start+i));
             if(processor.instructions[i].issue != -1)
-                instructionPanel.instructionLabels[4+4*i+1].setText(Integer.toString(processor.instructions[i].issue));
+                instructionPanel.instructionLabels[4+4*i+1].setText(Integer.toString(processor.instructions[start+i].issue));
             if(processor.instructions[i].exec != -1)
-                instructionPanel.instructionLabels[4+4*i+2].setText(Integer.toString(processor.instructions[i].exec));
+                instructionPanel.instructionLabels[4+4*i+2].setText(Integer.toString(processor.instructions[start+i].exec));
             if(processor.instructions[i].write != -1)
-                instructionPanel.instructionLabels[4+4*i+3].setText(Integer.toString(processor.instructions[i].write));
+                instructionPanel.instructionLabels[4+4*i+3].setText(Integer.toString(processor.instructions[start+i].write));
         }
     }
 
